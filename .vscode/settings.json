@@ -1,0 +1,6 @@
+{
+  "eslint.enable": true,
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true,
+  "unocss.root": "packages/client"
+}
