@@ -3,4 +3,7 @@
   "editor.formatOnPaste": true,
   "editor.formatOnSave": true,
   "unocss.root": "frontend",
+  "emmet.includeLanguages": {
+    "javascript": "javascriptreact"
+  }
 }

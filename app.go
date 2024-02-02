@@ -14,6 +14,13 @@ type App struct {
 	zkConn *zk.Conn
 }
 
+type Node struct {
+	Key      string
+	Path     string
+	Name     string
+	Children []Node
+}
+
 // NewApp creates a new App application struct
 func NewApp() *App {
 	return &App{}
@@ -32,9 +39,21 @@ func (a *App) startup(ctx context.Context) {
 }
 
 // Greet returns a greeting for the given name
-func (a *App) GetRootNodes() []string {
+func (a *App) GetNodes(path string) []Node {
 
-	rootNodes, _, _ := a.zkConn.Children("/")
-	slog.Info("rootNodes", rootNodes)
+	rootPaths, _, _ := a.zkConn.Children(path)
+
+	rootNodes := make([]Node, len(rootPaths))
+
+	for i, v := range rootPaths {
+		path_ := path
+		if path == "/" {
+			path_ = path + v
+		} else {
+			path_ = path + "/" + v
+		}
+		rootNodes[i] = Node{v, path_, v, nil}
+	}
+	slog.Info("root", "nodes", rootNodes)
 	return rootNodes
 }

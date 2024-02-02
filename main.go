@@ -35,6 +35,9 @@ func main() {
 		Windows: &windows.Options{
 			WindowIsTranslucent: true,
 		},
+		Debug: options.Debug{
+			OpenInspectorOnStartup: true,
+		},
 	})
 
 	if err != nil {
