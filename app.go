@@ -31,7 +31,7 @@ func NewApp() *App {
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 
-	conn, _, err := zk.Connect([]string{"192.168.14.8:2181"}, time.Second*5)
+	conn, _, err := zk.Connect([]string{"127.0.0.1:2181"}, time.Second*5)
 	if err != nil {
 		panic(err)
 	}
