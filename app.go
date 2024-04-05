@@ -57,3 +57,12 @@ func (a *App) GetNodes(path string) []Node {
 	slog.Info("root", "nodes", rootNodes)
 	return rootNodes
 }
+
+func (a *App) GetNodeInfo(path string) string {
+	nodeInfoByte, _, err := a.zkConn.Get(path)
+	if err != nil {
+		slog.Error(err.Error())
+	}
+	slog.Info("NodeInfo", "Path", path, "Info", string(nodeInfoByte[:]))
+	return string(nodeInfoByte[:])
+}

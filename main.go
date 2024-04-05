@@ -27,8 +27,8 @@ func main() {
 		Frameless:        true,
 		BackgroundColour: &options.RGBA{R: 0, G: 0, B: 0, A: 0},
 		OnStartup:        app.startup,
-		CSSDragProperty:  "widows",
-		CSSDragValue:     "1",
+		CSSDragProperty:  "--wails-draggable",
+		CSSDragValue:     "drag",
 		Bind: []interface{}{
 			app,
 		},

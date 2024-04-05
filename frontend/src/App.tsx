@@ -1,88 +1,29 @@
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { Box } from '@mui/material';
-import { useEffect, useState } from 'react';
-import { GetNodes } from "../wailsjs/go/main/App";
+import { Box, useScrollTrigger } from "@mui/material"
+import { MenuTree } from "./page/MenuTree"
 import './App.css';
-import { SimpleTreeView, TreeItem } from '@mui/x-tree-view';
-
-interface Node {
-    Key: string,
-    Path: string,
-    Name: string,
-    Children: Array<Node>
-}
+import { GetNodeInfo } from "../wailsjs/go/main/App";
+import { useState } from "react";
 
 const App = () => {
-    const [rootNodes, setRootNodes] = useState<Array<Node>>();
-    const [expandedNodes, setExpandedNodes] = useState<string[]>([]);
 
+    const [nodeInfo, setNodeInfo] = useState("")
 
-    useEffect(() => {
-        GetNodes("/").then(ns => {
-            if (ns.length > 0) { setRootNodes(ns) }
-        });
-    }, [])
-
-
-    useEffect(() => {
-        console.log(rootNodes)
-    }, [rootNodes])
-
-
-    const loadChildren = (path: string) => {
-        GetNodes(`${path}`).then(ns => {
-            if (!rootNodes) {
-                return
-            }
-            if (expandedNodes.includes(path)) {
-                setExpandedNodes(expandedNodes.filter(e => e !== path))
-                return
-            }
-            const i = rootNodes?.findIndex(r => r.Path === path)
-            rootNodes[i].Children = ns
-            setRootNodes([...rootNodes])
-            setExpandedNodes([...expandedNodes, path])
-        });
+    const setSelectNode = async (path: string) => {
+        console.log(path)
+        const data = await GetNodeInfo(path);
+        console.log(data)
+        setNodeInfo(data)
     }
 
     return (
         <div id="App">
-            <Box>
+            <Box sx={{ "--wails-draggable": "drag" }}>
                 setting
             </Box>
             <Box className="flex">
-                <Box
-                    className="w-80 max-h-screen overflow-scroll"
-                    sx={{
-                        '::-webkit-scrollbar': {
-                            display: 'none'
-                        }
-                    }}>
-                    <SimpleTreeView
-                        aria-label="file system navigator"
-                        expandedItems={expandedNodes}
-                        slots={{ collapseIcon: ExpandMoreIcon, expandIcon: ChevronRightIcon }}
-                    >
-                        {rootNodes?.map(n =>
-                            <TreeItem
-                                key={n.Key}
-                                itemId={n.Path}
-                                label={<div className="text-left">{n.Name}</div>}
-                                onClick={() => loadChildren(n.Path)}>
-                                {n?.Children?.map(nc =>
-                                    <TreeItem
-                                        key={nc.Key}
-                                        itemId={nc.Path}
-                                        label={<div className="text-left">{nc.Name}</div>}
-                                    />
-                                )}
-                            </TreeItem>
-                        )}
-                    </SimpleTreeView>
-                </Box>
+                <MenuTree setSelectNode={setSelectNode} />
                 <Box className="ml-5">
-                    work
+                    {nodeInfo}
                 </Box>
             </Box>
         </div >
