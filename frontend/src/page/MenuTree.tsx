@@ -21,31 +21,58 @@ const MenuTree = (props: MenuTreeProps) => {
 
   const { setSelectNode } = props;
 
-  const [rootNodes, setRootNodes] = useState<Array<Node>>();
+  const [rootNodes, setRootNodes] = useState<Array<Node>>([{
+    Key: "/",
+    Path: "/",
+    Name: "/",
+    Children: [],
+  }]);
   const [expandedNodes, setExpandedNodes] = useState<string[]>([]);
 
-
   useEffect(() => {
-    GetNodes("/").then(ns => {
-      if (ns.length > 0) { setRootNodes(ns) }
-    });
+    loadChildren("/")
   }, [])
 
-  const loadChildren = (path: string) => {
+  // 加载子路径
+  const loadChildren = async (path: string) => {
+    // 选中的路径
     setSelectNode(path)
-    GetNodes(`${path}`).then(ns => {
-      if (!rootNodes) {
-        return
+    // 获取选中的路径的子路径
+    const ns = await GetNodes(`${path}`)
+    if (path === "/") {
+      rootNodes[0].Children = ns
+    } else {
+      const paths = path.split("/");
+      let children = rootNodes[0].Children;
+      for (const pathSect of paths.filter(p => p !== "")) {
+        const node = children.find(r => r.Key === pathSect)
+        if (node?.Children && (node?.Children.length !== 0)) {
+          children = node.Children
+          continue
+        }
+        node!.Children = ns
       }
-      if (expandedNodes.includes(path)) {
-        setExpandedNodes(expandedNodes.filter(e => e !== path))
-        return
-      }
-      const i = rootNodes?.findIndex(r => r.Path === path)
-      rootNodes[i].Children = ns
-      setRootNodes([...rootNodes])
-      setExpandedNodes([...expandedNodes, path])
-    });
+    }
+    // 设置目录树
+    setRootNodes([...rootNodes])
+    // 选中展开
+    setExpandedNodes([...expandedNodes, path])
+  }
+
+  // 加载树
+  const loadTreeItem = (nodes: Array<Node>) => {
+    if (!nodes || nodes.length === 0) {
+      return
+    }
+    return nodes?.map(n =>
+      <TreeItem
+        key={n.Key}
+        itemId={n.Path}
+        label={Label(n.Name)}
+        onClick={() => loadChildren(n.Path)}>
+        {loadTreeItem(n.Children)}
+      </TreeItem>
+    )
   }
 
   const Label = (name: string) => {
@@ -73,22 +100,7 @@ const MenuTree = (props: MenuTreeProps) => {
         expandedItems={expandedNodes}
         slots={{ collapseIcon: ExpandMoreIcon, expandIcon: ChevronRightIcon }}
       >
-        {rootNodes?.map(n =>
-          <TreeItem
-            key={n.Key}
-            itemId={n.Path}
-            label={Label(n.Name)}
-            onClick={() => loadChildren(n.Path)}>
-            {n?.Children?.map(nc =>
-              <TreeItem
-                key={nc.Key}
-                itemId={nc.Path}
-                onClick={() => setSelectNode(nc.Path)}
-                label={Label(nc.Name)}
-              />
-            )}
-          </TreeItem>
-        )}
+        {loadTreeItem(rootNodes)}
       </SimpleTreeView>
     </Box>
   )
