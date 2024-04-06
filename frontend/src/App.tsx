@@ -3,6 +3,8 @@ import { Box } from "@mui/material"
 import { MenuTree } from "./page/MenuTree"
 import { GetNodeInfo } from "../wailsjs/go/main/App";
 import { useState } from "react";
+import { Close } from '@mui/icons-material';
+import { Quit } from '../wailsjs/runtime/runtime';
 
 const App = () => {
 
@@ -15,8 +17,14 @@ const App = () => {
 
     return (
         <div id="App">
-            <Box sx={{ "--wails-draggable": "drag" }}>
-                setting
+            <Box
+                className="flex flex-content-center flex-justify-end p-1"
+                sx={{ "--wails-draggable": "drag" }}
+            >
+                <Close
+                    className="hover:text-amber cursor-pointer"
+                    onClick={Quit}
+                />
             </Box>
             <Box className="flex">
                 <MenuTree setSelectNode={setSelectNode} />
