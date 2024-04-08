@@ -5,3 +5,5 @@ import {main} from '../models';
 export function GetNodeInfo(arg1:string):Promise<string>;
 
 export function GetNodes(arg1:string):Promise<Array<main.Node>>;
+
+export function SetWatcherForSelectedNode(arg1:string):Promise<void>;

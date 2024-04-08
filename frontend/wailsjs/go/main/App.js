@@ -9,3 +9,7 @@ export function GetNodeInfo(arg1) {
 export function GetNodes(arg1) {
   return window['go']['main']['App']['GetNodes'](arg1);
 }
+
+export function SetWatcherForSelectedNode(arg1) {
+  return window['go']['main']['App']['SetWatcherForSelectedNode'](arg1);
+}

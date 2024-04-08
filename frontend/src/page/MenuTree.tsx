@@ -2,9 +2,10 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Box } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { GetNodes } from "../../wailsjs/go/main/App";
+import { GetNodes, SetWatcherForSelectedNode } from "../../wailsjs/go/main/App";
 import { SimpleTreeView, TreeItem } from '@mui/x-tree-view';
 import { Add, DeleteForever } from '@mui/icons-material';
+import { EventsOn } from '../../wailsjs/runtime/runtime';
 
 interface Node {
   Key: string,
@@ -27,16 +28,34 @@ const MenuTree = (props: MenuTreeProps) => {
     Name: "/",
     Children: [],
   }]);
+
   const [expandedNodes, setExpandedNodes] = useState<string[]>([]);
 
+  const [selectedNode, setSelectedNode] = useState<string>()
+
+  // 当前点击节点
   useEffect(() => {
+    if (!selectedNode) {
+      return
+    }
+    // 向父组件传递
+    setSelectNode(selectedNode)
+    // 监听当前节点的子节点
+    SetWatcherForSelectedNode(selectedNode)
+  }, [selectedNode])
+
+  // 启动加载
+  useEffect(() => {
+    // 加载树
     loadChildren("/")
+    // 监听子节点改变通知
+    EventsOn("childrenNodeChange", async (path: string) => {
+      loadChildren(path)
+    })
   }, [])
 
   // 加载子路径
   const loadChildren = async (path: string) => {
-    // 选中的路径
-    setSelectNode(path)
     // 获取选中的路径的子路径
     const ns = await GetNodes(`${path}`)
     if (path === "/") {
@@ -44,19 +63,30 @@ const MenuTree = (props: MenuTreeProps) => {
     } else {
       const paths = path.split("/");
       let children = rootNodes[0].Children;
+      let node = null;
       for (const pathSect of paths.filter(p => p !== "")) {
-        const node = children.find(r => r.Key === pathSect)
+        node = children.find(r => r.Key === pathSect)
         if (node?.Children && (node?.Children.length !== 0)) {
           children = node.Children
-          continue
         }
-        node!.Children = ns
+      }
+      if (node) {
+        node.Children = ns
       }
     }
     // 设置目录树
     setRootNodes([...rootNodes])
+  }
+
+  // 选择节点
+  const selectNode = async (path: string) => {
+    // 选中的路径
+    setSelectedNode(path)
+    // 加载子节点
+    await loadChildren(path)
     // 选中展开
-    setExpandedNodes([...expandedNodes, path])
+    setExpandedNodes(Array.from(new Set([...expandedNodes, path])))
+    console.log(rootNodes, expandedNodes)
   }
 
   // 加载树
@@ -69,12 +99,13 @@ const MenuTree = (props: MenuTreeProps) => {
         key={n.Key}
         itemId={n.Path}
         label={Label(n.Name)}
-        onClick={() => loadChildren(n.Path)}>
+        onClick={() => selectNode(n.Path)}>
         {loadTreeItem(n.Children)}
       </TreeItem>
     )
   }
 
+  // node 显示
   const Label = (name: string) => {
     return (
       <div className="flex flex-justify-between">

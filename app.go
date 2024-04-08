@@ -1,6 +1,7 @@
 package main
 
 import (
+	"changeme/pkg/watch"
 	"context"
 	"log/slog"
 	"time"
@@ -10,8 +11,9 @@ import (
 
 // App struct
 type App struct {
-	ctx    context.Context
-	zkConn *zk.Conn
+	ctx     context.Context
+	zkConn  *zk.Conn
+	watcher *watch.Watcher
 }
 
 type Node struct {
@@ -65,4 +67,19 @@ func (a *App) GetNodeInfo(path string) string {
 	}
 	slog.Info("NodeInfo", "Path", path, "Info", string(nodeInfoByte[:]))
 	return string(nodeInfoByte[:])
+}
+
+func (a *App) SetWatcherForSelectedNode(path string) {
+	if a.watcher != nil {
+		a.watcher.CloseCh <- 0
+	}
+	watcher := watch.Watcher{}
+	watcher.CloseCh = make(chan int)
+	watcher.Ctx = a.ctx
+	a.watcher = &watcher
+	go func() {
+		if err := watcher.WatchSelectedNode(a.zkConn, path); err != nil {
+			a.watcher = nil
+		}
+	}()
 }
