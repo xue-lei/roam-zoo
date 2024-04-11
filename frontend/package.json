@@ -12,8 +12,8 @@
     "@emotion/react": "^11.11.3",
     "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^5.15.3",
-    "@mui/material": "^5.15.3",
-    "@mui/x-tree-view": "7.1.0",
+    "@mui/material": "^5.15.15",
+    "@mui/x-tree-view": "7.1.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.1"
@@ -22,9 +22,9 @@
     "@types/react": "^18.0.17",
     "@types/react-dom": "^18.0.6",
     "@types/react-router-dom": "^5.3.3",
-    "@vitejs/plugin-react": "^2.0.1",
-    "typescript": "^4.6.4",
-    "unocss": "^0.58.3",
+    "@vitejs/plugin-react": "^4.2.1",
+    "typescript": "5.5.0-dev.20240410",
+    "unocss": "^0.59.0",
     "vite": "^5.2.8"
   }
 }

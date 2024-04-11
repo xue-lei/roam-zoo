@@ -43,21 +43,20 @@ func (a *App) startup(ctx context.Context) {
 // Greet returns a greeting for the given name
 func (a *App) GetNodes(path string) []Node {
 
-	rootPaths, _, _ := a.zkConn.Children(path)
+	paths, _, _ := a.zkConn.Children(path)
 
-	rootNodes := make([]Node, len(rootPaths))
+	nodes := make([]Node, len(paths))
 
-	for i, v := range rootPaths {
+	for i, v := range paths {
 		path_ := path
 		if path == "/" {
 			path_ = path + v
 		} else {
 			path_ = path + "/" + v
 		}
-		rootNodes[i] = Node{v, path_, v, nil}
+		nodes[i] = Node{v, path_, v, make([]Node, 0)}
 	}
-	slog.Info("root", "nodes", rootNodes)
-	return rootNodes
+	return nodes
 }
 
 func (a *App) GetNodeInfo(path string) string {

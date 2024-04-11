@@ -22,7 +22,7 @@ const MenuTree = (props: MenuTreeProps) => {
 
   const { setSelectNode } = props;
 
-  const [rootNodes, setRootNodes] = useState<Array<Node>>([{
+  const [nodes, setNodes] = useState<Array<Node>>([{
     Key: "/",
     Path: "/",
     Name: "/",
@@ -54,15 +54,24 @@ const MenuTree = (props: MenuTreeProps) => {
     })
   }, [])
 
+  // 合并新旧子节点数组
+  const mergeChildren = (children: Array<Node>, ns: Array<Node>): Array<Node> => {
+
+    const childrenHas = children.filter(c => ns.findIndex(n => c.Path === n.Path) > -1)
+    const nsHas = ns.filter(n => childrenHas.findIndex(c => c.Path === n.Path) === -1)
+
+    return [...childrenHas, ...nsHas]
+  }
+
   // 加载子路径
   const loadChildren = async (path: string) => {
     // 获取选中的路径的子路径
     const ns = await GetNodes(`${path}`)
     if (path === "/") {
-      rootNodes[0].Children = ns
+      nodes[0].Children = mergeChildren(nodes[0].Children, ns)
     } else {
       const paths = path.split("/");
-      let children = rootNodes[0].Children;
+      let children = nodes[0].Children;
       let node = null;
       for (const pathSect of paths.filter(p => p !== "")) {
         node = children.find(r => r.Key === pathSect)
@@ -71,11 +80,11 @@ const MenuTree = (props: MenuTreeProps) => {
         }
       }
       if (node) {
-        node.Children = ns
+        node.Children = mergeChildren(node.Children, ns)
       }
     }
     // 设置目录树
-    setRootNodes([...rootNodes])
+    setNodes([...nodes])
   }
 
   // 选择节点
@@ -86,7 +95,16 @@ const MenuTree = (props: MenuTreeProps) => {
     await loadChildren(path)
     // 选中展开
     setExpandedNodes(Array.from(new Set([...expandedNodes, path])))
-    console.log(rootNodes, expandedNodes)
+  }
+
+  // 折叠
+  const collapse = (path: string) => {
+    setExpandedNodes([...expandedNodes.filter(p => p !== path)])
+  }
+
+  // 展开
+  const expand = (path: string) => {
+    setExpandedNodes([...expandedNodes, path])
   }
 
   // 加载树
@@ -96,21 +114,24 @@ const MenuTree = (props: MenuTreeProps) => {
     }
     return nodes?.map(n =>
       <TreeItem
+        slots={{
+          collapseIcon: () => <ExpandMoreIcon onClick={() => { collapse(n.Path) }} />,
+          expandIcon: () => <ChevronRightIcon onClick={() => { expand(n.Path) }} />
+        }}
         key={n.Key}
         itemId={n.Path}
-        label={Label(n.Name)}
-        onClick={() => selectNode(n.Path)}>
+        label={Label(n.Name, n.Path)}>
         {loadTreeItem(n.Children)}
       </TreeItem>
     )
   }
 
   // node 显示
-  const Label = (name: string) => {
+  const Label = (name: string, path: string) => {
     return (
-      <div className="flex flex-justify-between">
-        <Box className="text-left">{name}</Box>
-        <Box className="flex flex-content-center">
+      <div className="flex flex-justify-between group">
+        <Box onClick={() => selectNode(path)} className="flex-1 text-left">{name}</Box>
+        <Box className="flex-content-center group-hover:flex hidden">
           <Add />
           <DeleteForever />
         </Box>
@@ -120,18 +141,16 @@ const MenuTree = (props: MenuTreeProps) => {
 
   return (
     <Box
-      className="w-80 max-h-screen overflow-scroll"
+      className="w-80 ml-2 h-90vh overflow-scroll"
       sx={{
         '::-webkit-scrollbar': {
           display: 'none'
         }
       }}>
       <SimpleTreeView
-        aria-label="file system navigator"
-        expandedItems={expandedNodes}
-        slots={{ collapseIcon: ExpandMoreIcon, expandIcon: ChevronRightIcon }}
-      >
-        {loadTreeItem(rootNodes)}
+        aria-label="node tree navigator"
+        expandedItems={expandedNodes}>
+        {loadTreeItem(nodes)}
       </SimpleTreeView>
     </Box>
   )
