@@ -1,19 +1,22 @@
 package main
 
 import (
-	"changeme/pkg/watch"
 	"context"
 	"log/slog"
+	"roam-zoo/pkg/connection"
+	"roam-zoo/pkg/watch"
 	"time"
 
 	"github.com/go-zookeeper/zk"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
 type App struct {
-	ctx     context.Context
-	zkConn  *zk.Conn
-	watcher *watch.Watcher
+	ctx               context.Context
+	ConnectionManager *connection.ConnectionManager
+	zkConn            *zk.Conn
+	watcher           *watch.Watcher
 }
 
 type Node struct {
@@ -25,7 +28,7 @@ type Node struct {
 
 // NewApp creates a new App application struct
 func NewApp() *App {
-	return &App{}
+	return &App{ConnectionManager: connection.NewConnectionManager()}
 }
 
 // startup is called when the app starts. The context is saved
@@ -33,18 +36,40 @@ func NewApp() *App {
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 
-	conn, _, err := zk.Connect([]string{"127.0.0.1:2181"}, time.Second*5)
-	if err != nil {
-		panic(err)
+	a.ConnectionManager.LoadConfig()
+}
+
+func (a *App) Connect(k string) string {
+
+	connection := a.ConnectionManager.ConnectionMap[k]
+	config := connection.Config
+
+	if connection.ZkConn == nil {
+		conn, _, err := zk.Connect([]string{config.Host + ":" + config.Port}, time.Second*5)
+		if err != nil {
+			slog.Error("Connect Error", err)
+			return err.Error()
+		}
+		connection.ZkConn = conn
 	}
-	a.zkConn = conn
+
+	a.zkConn = connection.ZkConn
+	a.watcher = nil
+
+	slog.Info("connected", "info", a.zkConn.Server())
+
+	runtime.EventsEmit(a.ctx, "childrenNodeChange", "/")
+	return ""
 }
 
 // Greet returns a greeting for the given name
 func (a *App) GetNodes(path string) []Node {
 
-	paths, _, _ := a.zkConn.Children(path)
+	if a.zkConn == nil {
+		return make([]Node, 0)
+	}
 
+	paths, _, _ := a.zkConn.Children(path)
 	nodes := make([]Node, len(paths))
 
 	for i, v := range paths {
@@ -60,6 +85,11 @@ func (a *App) GetNodes(path string) []Node {
 }
 
 func (a *App) GetNodeInfo(path string) string {
+
+	if a.zkConn == nil {
+		return ""
+	}
+
 	nodeInfoByte, _, err := a.zkConn.Get(path)
 	if err != nil {
 		slog.Error(err.Error())
@@ -69,13 +99,20 @@ func (a *App) GetNodeInfo(path string) string {
 }
 
 func (a *App) SetWatcherForSelectedNode(path string) {
+
+	if a.zkConn == nil {
+		return
+	}
+
 	if a.watcher != nil {
 		a.watcher.CloseCh <- 0
 	}
+
 	watcher := watch.Watcher{}
 	watcher.CloseCh = make(chan int)
 	watcher.Ctx = a.ctx
 	a.watcher = &watcher
+
 	go func() {
 		if err := watcher.WatchSelectedNode(a.zkConn, path); err != nil {
 			a.watcher = nil

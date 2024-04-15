@@ -31,6 +31,7 @@ func main() {
 		CSSDragValue:     "drag",
 		Bind: []interface{}{
 			app,
+			app.ConnectionManager,
 		},
 		Windows: &windows.Options{
 			WindowIsTranslucent: true,

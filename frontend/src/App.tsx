@@ -2,11 +2,15 @@ import './App.css';
 import { Box } from "@mui/material"
 import { MenuTree } from "./page/MenuTree"
 import { GetNodeInfo } from "../wailsjs/go/main/App";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Close } from '@mui/icons-material';
 import { Quit } from '../wailsjs/runtime/runtime';
+import { Connection, type ConnectionForwordRef } from './page/Connection';
+import { SideMenu } from './page/SideMenu';
 
 const App = () => {
+
+    const connectionRef = useRef<ConnectionForwordRef>(null)
 
     const [nodeInfo, setNodeInfo] = useState("")
 
@@ -27,6 +31,8 @@ const App = () => {
                 />
             </Box>
             <Box className="flex">
+                <SideMenu addConnection={() => { connectionRef.current!.handleClickOpen() }} />
+                <Connection ref={connectionRef} />
                 <MenuTree setSelectNode={setSelectNode} />
                 <Box className="ml-5">
                     {nodeInfo}

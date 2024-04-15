@@ -24,7 +24,7 @@
     "@types/react-router-dom": "^5.3.3",
     "@vitejs/plugin-react": "^4.2.1",
     "typescript": "5.5.0-dev.20240410",
-    "unocss": "^0.59.0",
+    "unocss": "^0.59.2",
     "vite": "^5.2.8"
   }
 }
