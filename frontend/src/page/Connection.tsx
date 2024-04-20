@@ -1,9 +1,10 @@
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from "@mui/material"
-import { forwardRef, useEffect, useImperativeHandle, useState } from "react"
-import { GetConnections, SaveConnection } from "../../wailsjs/go/connection/ConnectionManager"
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, TextField } from "@mui/material"
+import { forwardRef, useEffect, useImperativeHandle, useState, MouseEventHandler } from "react"
+import { DeleteConnection, GetConnections, SaveConnection } from "../../wailsjs/go/connection/ConnectionManager"
 import { config } from "../../wailsjs/go/models";
 import { Connect } from "../../wailsjs/go/main/App";
 import { useNotification } from "../hooks/use-notification";
+import { ContextMenuHoc, type ContextMenuPropsItem } from "../component/context-menu";
 
 interface ConnectionForwordRef {
   handleClickOpen: () => void
@@ -12,7 +13,7 @@ interface ConnectionForwordRef {
 const Connection = forwardRef<ConnectionForwordRef>(({ }, ref) => {
 
   useImperativeHandle(ref, () => ({
-    handleClickOpen
+    handleClickOpen,
   }))
 
   const [show] = useNotification();
@@ -21,11 +22,11 @@ const Connection = forwardRef<ConnectionForwordRef>(({ }, ref) => {
 
   const handleClickOpen = () => {
     setOpen(true);
-  };
+  }
 
   const handleClose = () => {
     setOpen(false);
-  };
+  }
 
   useEffect(() => {
     getConnections()
@@ -40,6 +41,27 @@ const Connection = forwardRef<ConnectionForwordRef>(({ }, ref) => {
     setConnectionMap(connections)
   }
 
+  const ContextMenu = ContextMenuHoc(
+    Object.keys(connectionMap).map(k => {
+      const ChildrenItem = (props: { onContextMenu: MouseEventHandler }) =>
+        <div
+          onContextMenu={props.onContextMenu}
+          className="[&:not(:first-child)]:m-t-2 p-3 border-solid b-rd-2 border-2 border-rose-4  cursor-pointer select-none"
+          onDoubleClick={async (event: React.MouseEvent) => {
+            event.stopPropagation()
+            const r = await Connect(k)
+            if (r) {
+              show({ vertical: 'top', horizontal: 'center', message: r })
+            }
+            setSelectedKey(k)
+          }}
+        >
+          {`${connectionMap[k].host}:${connectionMap[k].port}`}
+        </div>
+      return { k, ChildrenItem }
+    })
+  )
+
   return (
     <>
       <Box
@@ -49,22 +71,25 @@ const Connection = forwardRef<ConnectionForwordRef>(({ }, ref) => {
             display: 'none'
           }
         }}>
-        {Object.keys(connectionMap).map(k =>
-          <div
-            className="p-3 border-solid b-rd-2 border-2 border-rose-4 [&:not(:first-child)]:m-t-2 cursor-pointer"
-            key={k}
-            onDoubleClick={async (event: React.MouseEvent) => {
-              event.stopPropagation()
-              const r = await Connect(k)
-              if (r) {
-                show({ vertical: 'top', horizontal: 'center', message: r })
-              }
-              setSelectedKey(k)
-            }}
-          >
-            {`${connectionMap[k].host}:${connectionMap[k].port}`}
-          </div>
-        )}
+        <ContextMenu
+          menus={[
+            {
+              key: "DELETE",
+              node: ({ k, close }: ContextMenuPropsItem) =>
+                <MenuItem
+                  onClick={async () => {
+                    if (k) {
+                      await DeleteConnection(k)
+                      getConnections()
+                    } else {
+                      close()
+                    }
+                  }}>
+                  DELETE
+                </MenuItem>
+            }
+          ]}
+        />
       </Box>
       <Dialog
         open={open}

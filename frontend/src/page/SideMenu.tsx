@@ -13,6 +13,7 @@ const SideMenu = (props: SideMenuProps) => {
     <Box className="w-8 ml-2 h-90vh">
       <Add
         className="border-2 border-solid border-white"
+        sx={{ fontSize: 14 }}
         onClick={addConnection}
       />
     </Box>
