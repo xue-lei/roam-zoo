@@ -1,7 +1,7 @@
 import { Backdrop, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, TextField } from "@mui/material"
 import { forwardRef, useEffect, useImperativeHandle, useState, MouseEventHandler } from "react"
 import { DeleteConnection, GetConnections, SaveConnection } from "../../wailsjs/go/connection/ConnectionManager"
-import { config } from "../../wailsjs/go/models";
+import { config, connection } from "../../wailsjs/go/models";
 import { Connect } from "../../wailsjs/go/main/App";
 import { useNotification } from "../hooks/use-notification";
 import { ContextMenuHoc, type ContextMenuPropsItem } from "../component/context-menu";
@@ -35,17 +35,19 @@ const Connection = forwardRef<ConnectionForwordRef>(({ }, ref) => {
     getConnections()
   }, [])
 
-  const [connectionMap, setConnectionMap] = useState<{ [key: string]: config.Connection }>({})
+  const [connectionConfig, setConnectionConfig] = useState<connection.ConnectionConfig[]>([])
 
-  const [selectedKey, setSelectedKey] = useState<string>("")
+  const [selectedCfg, setSelectedCfg] = useState<connection.ConnectionConfig>()
 
   const getConnections = async () => {
     const connections = await GetConnections()
-    setConnectionMap(connections)
+    setConnectionConfig(connections)
   }
 
+  connectionConfig.map(cfg => cfg.key)
+
   const ContextMenu = ContextMenuHoc(
-    Object.keys(connectionMap).map(k => {
+    connectionConfig.map(cfg => {
       const ChildrenItem = (props: { onContextMenu: MouseEventHandler }) =>
         <div
           onContextMenu={props.onContextMenu}
@@ -53,18 +55,18 @@ const Connection = forwardRef<ConnectionForwordRef>(({ }, ref) => {
           onDoubleClick={async (event: React.MouseEvent) => {
             event.stopPropagation()
             setOpenBackdrop(true)
-            const r = await Connect(k)
+            const r = await Connect(cfg.key)
             setOpenBackdrop(false)
             if (r) {
               show({ vertical: 'top', horizontal: 'center', message: r })
               return;
             }
-            setSelectedKey(k)
+            setSelectedCfg(cfg)
           }}
         >
-          {`${connectionMap[k].host}:${connectionMap[k].port}`}
+          {`${cfg.config.host}:${cfg.config.port}`}
         </div>
-      return { k, ChildrenItem }
+      return { k: cfg.key, ChildrenItem }
     })
   )
 
@@ -128,7 +130,7 @@ const Connection = forwardRef<ConnectionForwordRef>(({ }, ref) => {
             type="text"
             fullWidth
             variant="standard"
-            defaultValue={connectionMap[selectedKey]?.host}
+            defaultValue={selectedCfg?.config?.host}
           />
           <TextField
             autoFocus
@@ -140,7 +142,7 @@ const Connection = forwardRef<ConnectionForwordRef>(({ }, ref) => {
             type="text"
             fullWidth
             variant="standard"
-            defaultValue={connectionMap[selectedKey]?.port}
+            defaultValue={selectedCfg?.config?.port}
           />
         </DialogContent>
         <DialogActions>

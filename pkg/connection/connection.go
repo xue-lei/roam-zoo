@@ -3,6 +3,7 @@ package connection
 import (
 	"context"
 	"roam-zoo/pkg/config"
+	"sort"
 	"strconv"
 
 	"github.com/go-zookeeper/zk"
@@ -11,6 +12,11 @@ import (
 type Connection struct {
 	Config config.Connection
 	ZkConn *zk.Conn
+}
+
+type ConnectionConfig struct {
+	Key    string            `json:"key"`
+	Config config.Connection `json:"config"`
 }
 
 type ConnectionManager struct {
@@ -51,12 +57,13 @@ func (cm *ConnectionManager) refreshConfig() {
 	}
 }
 
-func (cm *ConnectionManager) GetConnections() map[string]config.Connection {
-	configMap := make(map[string]config.Connection)
-	for k, connection := range cm.ConnectionMap {
-		configMap[k] = connection.Config
+func (cm *ConnectionManager) GetConnections() []ConnectionConfig {
+	configs := make([]ConnectionConfig, 0, len(cm.ConnectionMap))
+
+	for _, key := range getOrderKeys(cm.ConnectionMap) {
+		configs = append(configs, ConnectionConfig{key, cm.ConnectionMap[key].Config})
 	}
-	return configMap
+	return configs
 }
 
 func (cm *ConnectionManager) SaveConnection(config config.Connection) {
@@ -66,11 +73,25 @@ func (cm *ConnectionManager) SaveConnection(config config.Connection) {
 }
 
 func (cm *ConnectionManager) DeleteConnection(k string) {
+
 	delete(cm.ConnectionMap, k)
+
 	cm.config.Connections = make([]config.Connection, 0)
-	for _, connection := range cm.ConnectionMap {
-		cm.config.Connections = append(cm.config.Connections, connection.Config)
+	for _, key := range getOrderKeys(cm.ConnectionMap) {
+		cm.config.Connections = append(cm.config.Connections, cm.ConnectionMap[key].Config)
 	}
+
 	cm.configStore.Update(cm.config)
 	cm.refreshConfig()
+}
+
+func getOrderKeys(connectionMap map[string]*Connection) []string {
+
+	keys := make([]string, 0, len(connectionMap))
+	for k := range connectionMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	return keys
 }
