@@ -6,13 +6,7 @@ import { GetNodes, SetWatcherForSelectedNode } from "../../wailsjs/go/main/App";
 import { SimpleTreeView, TreeItem } from '@mui/x-tree-view';
 import { Add, DeleteForever } from '@mui/icons-material';
 import { EventsOn } from '../../wailsjs/runtime/runtime';
-
-interface Node {
-  Key: string,
-  Path: string,
-  Name: string,
-  Children: Array<Node>
-}
+import { main } from '../../wailsjs/go/models';
 
 interface MenuTreeProps {
   setSelectNode: (path: string) => void
@@ -22,12 +16,12 @@ const MenuTree = (props: MenuTreeProps) => {
 
   const { setSelectNode } = props;
 
-  const [nodes, setNodes] = useState<Array<Node>>([{
-    Key: "/",
-    Path: "/",
-    Name: "/",
-    Children: [],
-  }]);
+  const [nodes, setNodes] = useState<Array<main.Node>>([new main.Node({
+    key: "/",
+    path: "/",
+    name: "/",
+    children: [],
+  })]);
 
   const [expandedNodes, setExpandedNodes] = useState<string[]>([]);
 
@@ -55,10 +49,10 @@ const MenuTree = (props: MenuTreeProps) => {
   }, [])
 
   // 合并新旧子节点数组
-  const mergeChildren = (children: Array<Node>, ns: Array<Node>): Array<Node> => {
+  const mergeChildren = (children: Array<main.Node>, ns: Array<main.Node>): Array<main.Node> => {
 
-    const childrenHas = children.filter(c => ns.findIndex(n => c.Path === n.Path) > -1)
-    const nsHas = ns.filter(n => childrenHas.findIndex(c => c.Path === n.Path) === -1)
+    const childrenHas = children.filter(c => ns.findIndex(n => c.path === n.path) > -1)
+    const nsHas = ns.filter(n => childrenHas.findIndex(c => c.path === n.path) === -1)
 
     return [...childrenHas, ...nsHas]
   }
@@ -68,19 +62,19 @@ const MenuTree = (props: MenuTreeProps) => {
     // 获取选中的路径的子路径
     const ns = await GetNodes(`${path}`)
     if (path === "/") {
-      nodes[0].Children = mergeChildren(nodes[0].Children, ns)
+      nodes[0].children = mergeChildren(nodes[0].children, ns)
     } else {
       const paths = path.split("/");
-      let children = nodes[0].Children;
+      let children = nodes[0].children;
       let node = null;
       for (const pathSect of paths.filter(p => p !== "")) {
-        node = children.find(r => r.Key === pathSect)
-        if (node?.Children && (node?.Children.length !== 0)) {
-          children = node.Children
+        node = children.find(r => r.key === pathSect)
+        if (node?.children && (node?.children.length !== 0)) {
+          children = node.children
         }
       }
       if (node) {
-        node.Children = mergeChildren(node.Children, ns)
+        node.children = mergeChildren(node.children, ns)
       }
     }
     // 设置目录树
@@ -108,20 +102,20 @@ const MenuTree = (props: MenuTreeProps) => {
   }
 
   // 加载树
-  const loadTreeItem = (nodes: Array<Node>) => {
+  const loadTreeItem = (nodes: Array<main.Node>) => {
     if (!nodes || nodes.length === 0) {
       return
     }
     return nodes?.map(n =>
       <TreeItem
         slots={{
-          collapseIcon: () => <ExpandMoreIcon onClick={() => { collapse(n.Path) }} />,
-          expandIcon: () => <ChevronRightIcon onClick={() => { expand(n.Path) }} />
+          collapseIcon: () => <ExpandMoreIcon onClick={() => { collapse(n.path) }} />,
+          expandIcon: () => <ChevronRightIcon onClick={() => { expand(n.path) }} />
         }}
-        key={n.Key}
-        itemId={n.Path}
-        label={Label(n.Name, n.Path)}>
-        {loadTreeItem(n.Children)}
+        key={n.key}
+        itemId={n.path}
+        label={Label(n.name, n.path)}>
+        {loadTreeItem(n.children)}
       </TreeItem>
     )
   }

@@ -20,10 +20,10 @@ type App struct {
 }
 
 type Node struct {
-	Key      string
-	Path     string
-	Name     string
-	Children []Node
+	Key      string `json:"key"`
+	Path     string `json:"path"`
+	Name     string `json:"name"`
+	Children []Node `json:"children"`
 }
 
 // NewApp creates a new App application struct
@@ -35,7 +35,6 @@ func NewApp() *App {
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
-
 	a.ConnectionManager.LoadConfig()
 }
 
@@ -50,13 +49,27 @@ func (a *App) Connect(k string) string {
 			slog.Error("Connect Error", err)
 			return err.Error()
 		}
+
+		count := 0
+		for {
+			if count > 15 {
+				conn.Close()
+				return "connect timeout"
+			}
+
+			if conn.SessionID() == 0 {
+				count++
+				<-time.After(100 * time.Millisecond)
+			} else {
+				break
+			}
+
+		}
 		connection.ZkConn = conn
 	}
 
 	a.zkConn = connection.ZkConn
 	a.watcher = nil
-
-	slog.Info("connected", "info", a.zkConn.Server())
 
 	runtime.EventsEmit(a.ctx, "childrenNodeChange", "/")
 	return ""

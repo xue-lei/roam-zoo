@@ -7,8 +7,12 @@ import { Close } from '@mui/icons-material';
 import { Quit } from '../wailsjs/runtime/runtime';
 import { Connection, type ConnectionForwordRef } from './page/Connection';
 import { SideMenu } from './page/SideMenu';
+import { MessageContext } from './component/provider';
+import { Root } from 'react-dom/client';
 
 const App = () => {
+
+    const [messageValue, setMessageValue] = useState<Root | null>(null)
 
     const connectionRef = useRef<ConnectionForwordRef>(null)
 
@@ -20,25 +24,27 @@ const App = () => {
     }
 
     return (
-        <div id="App">
-            <Box
-                className="flex flex-content-center flex-justify-end p-1"
-                sx={{ "--wails-draggable": "drag" }}
-            >
-                <Close
-                    className="hover:text-amber cursor-pointer"
-                    onClick={Quit}
-                />
-            </Box>
-            <Box className="flex">
-                <SideMenu addConnection={() => { connectionRef.current!.handleClickOpen() }} />
-                <Connection ref={connectionRef} />
-                <MenuTree setSelectNode={setSelectNode} />
-                <Box className="ml-5">
-                    {nodeInfo}
+        <MessageContext.Provider value={{ value: messageValue, setValue: setMessageValue }}>
+            <div id="App">
+                <Box
+                    className="flex flex-content-center flex-justify-end p-1"
+                    sx={{ "--wails-draggable": "drag" }}
+                >
+                    <Close
+                        className="hover:text-amber cursor-pointer"
+                        onClick={Quit}
+                    />
                 </Box>
-            </Box>
-        </div >
+                <Box className="flex">
+                    <SideMenu addConnection={() => { connectionRef.current!.handleClickOpen() }} />
+                    <Connection ref={connectionRef} />
+                    <MenuTree setSelectNode={setSelectNode} />
+                    <Box className="ml-5">
+                        {nodeInfo}
+                    </Box>
+                </Box>
+            </div >
+        </MessageContext.Provider>
     )
 }
 

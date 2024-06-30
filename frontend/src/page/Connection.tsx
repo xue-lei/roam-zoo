@@ -1,4 +1,4 @@
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, TextField } from "@mui/material"
+import { Backdrop, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, TextField } from "@mui/material"
 import { forwardRef, useEffect, useImperativeHandle, useState, MouseEventHandler } from "react"
 import { DeleteConnection, GetConnections, SaveConnection } from "../../wailsjs/go/connection/ConnectionManager"
 import { config } from "../../wailsjs/go/models";
@@ -19,6 +19,9 @@ const Connection = forwardRef<ConnectionForwordRef>(({ }, ref) => {
   const [show] = useNotification();
 
   const [open, setOpen] = useState(false);
+
+  const [openBackdrop, setOpenBackdrop] = useState(false);
+
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -49,9 +52,12 @@ const Connection = forwardRef<ConnectionForwordRef>(({ }, ref) => {
           className="[&:not(:first-child)]:m-t-2 p-3 border-solid b-rd-2 border-2 border-rose-4  cursor-pointer select-none"
           onDoubleClick={async (event: React.MouseEvent) => {
             event.stopPropagation()
+            setOpenBackdrop(true)
             const r = await Connect(k)
+            setOpenBackdrop(false)
             if (r) {
               show({ vertical: 'top', horizontal: 'center', message: r })
+              return;
             }
             setSelectedKey(k)
           }}
@@ -142,6 +148,11 @@ const Connection = forwardRef<ConnectionForwordRef>(({ }, ref) => {
           <Button type="submit">SAVE</Button>
         </DialogActions>
       </Dialog>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={openBackdrop}>
+        <CircularProgress color="inherit" />
+      </Backdrop>
     </>
   )
 })
