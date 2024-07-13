@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"roam-zoo/pkg/connection"
 	"roam-zoo/pkg/watch"
+	"strings"
 	"time"
 
 	"github.com/go-zookeeper/zk"
@@ -38,6 +40,18 @@ func (a *App) startup(ctx context.Context) {
 	a.ConnectionManager.LoadConfig()
 }
 
+var errLog string
+
+type zkLogger struct{}
+
+func (zkLog zkLogger) Printf(v string, i ...interface{}) {
+	zkLogS := fmt.Sprintf(v, i...)
+	if strings.Contains(zkLogS, "fail") {
+		errLog = zkLogS
+	}
+	slog.Info(zkLogS)
+}
+
 func (a *App) Connect(k string) string {
 
 	connection := a.ConnectionManager.ConnectionMap[k]
@@ -46,15 +60,22 @@ func (a *App) Connect(k string) string {
 	if connection.ZkConn == nil {
 		conn, _, err := zk.Connect([]string{config.Host + ":" + config.Port}, time.Second*5)
 		if err != nil {
-			slog.Error("Connect Error", err)
+			slog.Error("Connect", slog.Any("Error", err))
 			return err.Error()
 		}
 
+		zkLogger := zkLogger{}
+
+		conn.SetLogger(zkLogger)
+
 		count := 0
 		for {
-			if count > 15 {
+			if count > 20 {
 				conn.Close()
-				return "connect timeout"
+				if errLog == "" {
+					return "connect err"
+				}
+				return errLog
 			}
 
 			if conn.SessionID() == 0 {
