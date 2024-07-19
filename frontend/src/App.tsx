@@ -27,11 +27,11 @@ const App = () => {
         <MessageContext.Provider value={{ value: messageValue, setValue: setMessageValue }}>
             <div id="App">
                 <Box
-                    className="flex flex-content-center flex-justify-end p-1"
+                    className="flex flex-content-center flex-justify-end p-[6px_6px]"
                     sx={{ "--wails-draggable": "drag" }}
                 >
                     <Close
-                        className="hover:text-amber cursor-pointer"
+                        className="hover:text-amber hover:transform-rotate-90 !transition-transform-200 cursor-pointer"
                         onClick={Quit}
                     />
                 </Box>

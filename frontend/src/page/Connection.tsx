@@ -1,4 +1,15 @@
-import { Backdrop, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, TextField } from "@mui/material"
+import {
+  Backdrop,
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  MenuItem,
+  TextField
+} from "@mui/material"
 import { forwardRef, useEffect, useImperativeHandle, useState, MouseEventHandler } from "react"
 import { DeleteConnection, GetConnections, SaveConnection } from "../../wailsjs/go/connection/ConnectionManager"
 import { config, connection } from "../../wailsjs/go/models";
