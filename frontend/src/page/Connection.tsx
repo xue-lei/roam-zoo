@@ -17,52 +17,56 @@ import { Connect } from "../../wailsjs/go/main/App";
 import { useNotification } from "../hooks/use-notification";
 import { ContextMenuHoc, type ContextMenuPropsItem } from "../component/context-menu";
 
-interface ConnectionForwordRef {
-  handleClickOpen: () => void
+interface ConnectionRef {
+  openConnectInfoDialog: () => void
 }
 
-const Connection = forwardRef<ConnectionForwordRef>(({ }, ref) => {
+const Connection = forwardRef<ConnectionRef>(({ }, ref) => {
 
   useImperativeHandle(ref, () => ({
-    handleClickOpen,
+    openConnectInfoDialog,
   }))
 
   const [show] = useNotification();
 
-  const [open, setOpen] = useState(false);
+  const [connectInfoDialog, setConnectInfoDialog] = useState(false);
 
   const [openBackdrop, setOpenBackdrop] = useState(false);
 
-
-  const handleClickOpen = () => {
-    setOpen(true);
+  const openConnectInfoDialog = () => {
+    setSelectedCfg(new connection.ConnectionInfo({
+      key: "",
+      config: {
+        host: "",
+        port: ""
+      }
+    }))
+    setConnectInfoDialog(true);
   }
 
-  const handleClose = () => {
-    setOpen(false);
+  const closeConnectInfoDialog = () => {
+    setConnectInfoDialog(false);
   }
 
   useEffect(() => {
     getConnections()
   }, [])
 
-  const [connectionConfig, setConnectionConfig] = useState<connection.ConnectionConfig[]>([])
+  const [connectionConfig, setConnectionConfig] = useState<connection.ConnectionInfo[]>([])
 
-  const [selectedCfg, setSelectedCfg] = useState<connection.ConnectionConfig>()
+  const [selectedCfg, setSelectedCfg] = useState<connection.ConnectionInfo>()
 
   const getConnections = async () => {
     const connections = await GetConnections()
     setConnectionConfig(connections)
   }
 
-  connectionConfig.map(cfg => cfg.key)
-
   const ContextMenu = ContextMenuHoc(
     connectionConfig.map(cfg => {
       const ChildrenItem = (props: { onContextMenu: MouseEventHandler }) =>
         <div
           onContextMenu={props.onContextMenu}
-          className="[&:not(:first-child)]:m-t-2 p-3 border-solid b-rd-2 border-2 border-rose-4  cursor-pointer select-none"
+          className={`${cfg.connected ? "bg-red" : ""} color-[var(--text-color)] shadow shadow-blueGray [&:not(:first-child)]:m-t-2 p-3 b-rd-2 cursor-pointer select-none`}
           onDoubleClick={async (event: React.MouseEvent) => {
             event.stopPropagation()
             setOpenBackdrop(true)
@@ -72,7 +76,7 @@ const Connection = forwardRef<ConnectionForwordRef>(({ }, ref) => {
               show({ vertical: 'top', horizontal: 'center', message: r })
               return;
             }
-            setSelectedCfg(cfg)
+            getConnections()
           }}
         >
           {`${cfg.config.host}:${cfg.config.port}`}
@@ -84,7 +88,7 @@ const Connection = forwardRef<ConnectionForwordRef>(({ }, ref) => {
   return (
     <>
       <Box
-        className="w-50 ml-2 h-90vh overflow-scroll"
+        className="p-2 w-50 ml-2 h-90vh overflow-scroll"
         sx={{
           '::-webkit-scrollbar': {
             display: 'none'
@@ -111,8 +115,8 @@ const Connection = forwardRef<ConnectionForwordRef>(({ }, ref) => {
         />
       </Box>
       <Dialog
-        open={open}
-        onClose={handleClose}
+        open={connectInfoDialog}
+        onClose={closeConnectInfoDialog}
         PaperProps={{
           component: 'form',
           onSubmit: async (event: React.FormEvent<HTMLFormElement>) => {
@@ -121,7 +125,7 @@ const Connection = forwardRef<ConnectionForwordRef>(({ }, ref) => {
             const formJson = Object.fromEntries((formData as any).entries())
             await SaveConnection(new config.Connection(formJson))
             getConnections()
-            handleClose()
+            closeConnectInfoDialog()
           },
         }}
       >
@@ -157,12 +161,12 @@ const Connection = forwardRef<ConnectionForwordRef>(({ }, ref) => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>CANCAL</Button>
+          <Button onClick={closeConnectInfoDialog}>CANCAL</Button>
           <Button type="submit">SAVE</Button>
         </DialogActions>
       </Dialog>
       <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        sx={{ color: "var(--text-color)", zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={openBackdrop}>
         <CircularProgress color="inherit" />
       </Backdrop>
@@ -170,4 +174,4 @@ const Connection = forwardRef<ConnectionForwordRef>(({ }, ref) => {
   )
 })
 
-export { Connection, type ConnectionForwordRef }
+export { Connection, type ConnectionRef }

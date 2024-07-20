@@ -1,6 +1,5 @@
 import { Add } from "@mui/icons-material"
-import { Box } from "@mui/material"
-import { useNotification } from "../hooks/use-notification";
+import { Box, Fab } from "@mui/material"
 
 interface SideMenuProps {
   addConnection: () => void
@@ -10,15 +9,16 @@ const SideMenu = (props: SideMenuProps) => {
 
   const { addConnection } = props;
 
-  const [show] = useNotification()
-
   return (
-    <Box className="w-8 ml-2 h-90vh">
-      <Add
-        className="border-2 border-solid border-rd-10 border-white"
-        sx={{ fontSize: 14 }}
-        onClick={addConnection}
-      />
+    <Box className="p-t-2 w-10 ml-2 h-90vh">
+      <Fab
+        size="small"
+        color="primary"
+        aria-label="add"
+        className="!w-8 !h-8 !min-h-8"
+        onClick={addConnection} >
+        <Add />
+      </Fab>
     </Box>
   )
 }

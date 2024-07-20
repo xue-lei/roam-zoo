@@ -28,9 +28,17 @@ type Node struct {
 	Children []Node `json:"children"`
 }
 
+type NodeInfo struct {
+	Path  string `json:"path"`
+	Info  string `json:"info"`
+	Flags int32  `json:"flags"`
+}
+
 // NewApp creates a new App application struct
 func NewApp() *App {
-	return &App{ConnectionManager: connection.NewConnectionManager()}
+	connectionManager := connection.NewConnectionManager()
+	connectionManager.ConnectedMap = make(map[string]bool)
+	return &App{ConnectionManager: connectionManager}
 }
 
 // startup is called when the app starts. The context is saved
@@ -70,7 +78,7 @@ func (a *App) Connect(k string) string {
 
 		count := 0
 		for {
-			if count > 20 {
+			if count > 30 {
 				conn.Close()
 				if errLog == "" {
 					return "connect err"
@@ -86,6 +94,7 @@ func (a *App) Connect(k string) string {
 			}
 
 		}
+		a.ConnectionManager.ConnectedMap[k] = true
 		connection.ZkConn = conn
 	}
 
@@ -152,4 +161,13 @@ func (a *App) SetWatcherForSelectedNode(path string) {
 			a.watcher = nil
 		}
 	}()
+}
+
+func (a *App) AddNode(nodeInfo NodeInfo) {
+
+	if a.zkConn == nil {
+		return
+	}
+
+	a.zkConn.Create(nodeInfo.Path, []byte(nodeInfo.Info), nodeInfo.Flags, zk.WorldACL(zk.PermAll))
 }

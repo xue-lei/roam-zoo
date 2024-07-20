@@ -19,18 +19,20 @@ export namespace config {
 
 export namespace connection {
 	
-	export class ConnectionConfig {
+	export class ConnectionInfo {
 	    key: string;
 	    config: config.Connection;
+	    connected: boolean;
 	
 	    static createFrom(source: any = {}) {
-	        return new ConnectionConfig(source);
+	        return new ConnectionInfo(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.key = source["key"];
 	        this.config = this.convertValues(source["config"], config.Connection);
+	        this.connected = source["connected"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -91,6 +93,22 @@ export namespace main {
 		    }
 		    return a;
 		}
+	}
+	export class NodeInfo {
+	    path: string;
+	    info: string;
+	    flags: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new NodeInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.info = source["info"];
+	        this.flags = source["flags"];
+	    }
 	}
 
 }

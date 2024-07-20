@@ -1,8 +1,8 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { Box } from '@mui/material';
-import { useEffect, useState } from 'react';
-import { GetNodes, SetWatcherForSelectedNode } from "../../wailsjs/go/main/App";
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Select, TextField } from '@mui/material';
+import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
+import { AddNode, GetNodes, SetWatcherForSelectedNode } from "../../wailsjs/go/main/App";
 import { SimpleTreeView, TreeItem } from '@mui/x-tree-view';
 import { Add, DeleteForever } from '@mui/icons-material';
 import { EventsOn } from '../../wailsjs/runtime/runtime';
@@ -12,9 +12,25 @@ interface MenuTreeProps {
   setSelectNode: (path: string) => void
 }
 
-const MenuTree = (props: MenuTreeProps) => {
+interface MenuTreeRef {
+}
+
+const MenuTree = forwardRef<MenuTreeRef, MenuTreeProps>((props, ref) => {
+
+  useImperativeHandle(ref, () => ({
+  }))
 
   const { setSelectNode } = props;
+
+  const [nodeInfoDialog, setNodeInfoDialog] = useState(false);
+
+  const openNodeInfoDialog = () => {
+    setNodeInfoDialog(true);
+  }
+
+  const closeNodeInfoDialog = () => {
+    setNodeInfoDialog(false);
+  }
 
   const [nodes, setNodes] = useState<Array<main.Node>>([new main.Node({
     key: "/",
@@ -126,7 +142,7 @@ const MenuTree = (props: MenuTreeProps) => {
       <div className="flex flex-justify-between group">
         <Box onClick={() => selectNode(path)} className="flex-1 text-left">{name}</Box>
         <Box className="flex-content-center group-hover:flex hidden">
-          <Add />
+          <Add onClick={openNodeInfoDialog} />
           <DeleteForever />
         </Box>
       </div>
@@ -142,12 +158,75 @@ const MenuTree = (props: MenuTreeProps) => {
         }
       }}>
       <SimpleTreeView
+        className="color-[var(--text-color)]"
         aria-label="node tree navigator"
         expandedItems={expandedNodes}>
         {loadTreeItem(nodes)}
       </SimpleTreeView>
+      <Dialog
+        open={nodeInfoDialog}
+        onClose={closeNodeInfoDialog}
+        PaperProps={{
+          component: 'form',
+          onSubmit: async (event: React.FormEvent<HTMLFormElement>) => {
+            event.preventDefault()
+            const formData = new FormData(event.currentTarget)
+            const formJson = Object.fromEntries((formData as any).entries())
+            console.log(formData, formJson)
+            formJson['flags'] = Number(formJson['flags'])
+            await AddNode(new main.NodeInfo(formJson))
+            closeNodeInfoDialog()
+          },
+        }}
+      >
+        <DialogTitle>NodeInfo</DialogTitle>
+        <DialogContent>
+          {/* <DialogContentText>
+            To subscribe to this website, please enter your email address here. We
+            will send updates occasionally.
+          </DialogContentText> */}
+          <TextField
+            autoFocus
+            required
+            margin="dense"
+            id="path"
+            name="path"
+            label="Path"
+            type="text"
+            fullWidth
+            variant="standard"
+            defaultValue=""
+          />
+          <TextField
+            autoFocus
+            required
+            margin="dense"
+            id="info"
+            name="info"
+            label="Info"
+            type="text"
+            fullWidth
+            variant="standard"
+            defaultValue=""
+          />
+          <Select
+            autoFocus
+            id="flags"
+            name="flags"
+            label="Flags"
+            className="w-100%"
+            defaultValue={1}
+          >
+            <MenuItem value={1}>临时</MenuItem>
+          </Select>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeNodeInfoDialog}>CANCAL</Button>
+          <Button type="submit">SAVE</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
-}
+})
 
-export { MenuTree }
+export { MenuTree, type MenuTreeRef }

@@ -19,11 +19,17 @@ type ConnectionConfig struct {
 	Config config.Connection `json:"config"`
 }
 
+type ConnectionInfo struct {
+	ConnectionConfig
+	Connected bool `json:"connected"`
+}
+
 type ConnectionManager struct {
 	configStore   *config.ConfigStore
 	config        *config.Config
 	Ctx           context.Context
 	ConnectionMap map[string]*Connection
+	ConnectedMap  map[string]bool
 }
 
 func NewConnectionManager() *ConnectionManager {
@@ -57,11 +63,14 @@ func (cm *ConnectionManager) refreshConfig() {
 	}
 }
 
-func (cm *ConnectionManager) GetConnections() []ConnectionConfig {
-	configs := make([]ConnectionConfig, 0, len(cm.ConnectionMap))
+func (cm *ConnectionManager) GetConnections() []ConnectionInfo {
+	configs := make([]ConnectionInfo, 0, len(cm.ConnectionMap))
 
 	for _, key := range getOrderKeys(cm.ConnectionMap) {
-		configs = append(configs, ConnectionConfig{key, cm.ConnectionMap[key].Config})
+		configs = append(configs, ConnectionInfo{
+			ConnectionConfig: ConnectionConfig{key, cm.ConnectionMap[key].Config},
+			Connected:        cm.ConnectedMap[key],
+		})
 	}
 	return configs
 }

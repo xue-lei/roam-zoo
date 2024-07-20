@@ -5,7 +5,7 @@ import {config} from '../models';
 
 export function DeleteConnection(arg1:string):Promise<void>;
 
-export function GetConnections():Promise<Array<connection.ConnectionConfig>>;
+export function GetConnections():Promise<Array<connection.ConnectionInfo>>;
 
 export function LoadConfig():Promise<void>;
 
