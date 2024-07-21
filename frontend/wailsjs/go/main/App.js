@@ -6,8 +6,16 @@ export function AddNode(arg1) {
   return window['go']['main']['App']['AddNode'](arg1);
 }
 
+export function CloseConnection(arg1) {
+  return window['go']['main']['App']['CloseConnection'](arg1);
+}
+
 export function Connect(arg1) {
   return window['go']['main']['App']['Connect'](arg1);
+}
+
+export function DeleteNode(arg1) {
+  return window['go']['main']['App']['DeleteNode'](arg1);
 }
 
 export function GetNodeInfo(arg1) {

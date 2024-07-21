@@ -1,8 +1,8 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Select, TextField } from '@mui/material';
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, InputLabel, MenuItem, Select, TextField } from '@mui/material';
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
-import { AddNode, GetNodes, SetWatcherForSelectedNode } from "../../wailsjs/go/main/App";
+import { AddNode, DeleteNode, GetNodes, SetWatcherForSelectedNode } from "../../wailsjs/go/main/App";
 import { SimpleTreeView, TreeItem } from '@mui/x-tree-view';
 import { Add, DeleteForever } from '@mui/icons-material';
 import { EventsOn } from '../../wailsjs/runtime/runtime';
@@ -41,18 +41,18 @@ const MenuTree = forwardRef<MenuTreeRef, MenuTreeProps>((props, ref) => {
 
   const [expandedNodes, setExpandedNodes] = useState<string[]>([]);
 
-  const [selectedNode, setSelectedNode] = useState<string>()
+  const [selectedNodePath, setSelectedNodePath] = useState<string>("")
 
   // 当前点击节点
   useEffect(() => {
-    if (!selectedNode) {
+    if (!selectedNodePath) {
       return
     }
     // 向父组件传递
-    setSelectNode(selectedNode)
+    setSelectNode(selectedNodePath)
     // 监听当前节点的子节点
-    SetWatcherForSelectedNode(selectedNode)
-  }, [selectedNode])
+    SetWatcherForSelectedNode(selectedNodePath)
+  }, [selectedNodePath])
 
   // 启动加载
   useEffect(() => {
@@ -79,6 +79,10 @@ const MenuTree = forwardRef<MenuTreeRef, MenuTreeProps>((props, ref) => {
     const ns = await GetNodes(`${path}`)
     if (path === "/") {
       nodes[0].children = mergeChildren(nodes[0].children, ns)
+      if (selectedNodePath !== path) {
+        setSelectedNodePath(path)
+        setExpandedNodes([path])
+      }
     } else {
       const paths = path.split("/");
       let children = nodes[0].children;
@@ -100,7 +104,7 @@ const MenuTree = forwardRef<MenuTreeRef, MenuTreeProps>((props, ref) => {
   // 选择节点
   const selectNode = async (path: string) => {
     // 选中的路径
-    setSelectedNode(path)
+    setSelectedNodePath(path)
     // 加载子节点
     await loadChildren(path)
     // 选中展开
@@ -142,8 +146,13 @@ const MenuTree = forwardRef<MenuTreeRef, MenuTreeProps>((props, ref) => {
       <div className="flex flex-justify-between group">
         <Box onClick={() => selectNode(path)} className="flex-1 text-left">{name}</Box>
         <Box className="flex-content-center group-hover:flex hidden">
-          <Add onClick={openNodeInfoDialog} />
-          <DeleteForever />
+          <Add onClick={(event) => {
+            openNodeInfoDialog()
+          }} />
+          <DeleteForever onClick={(event) => {
+            event.stopPropagation()
+            DeleteNode(path)
+          }} />
         </Box>
       </div>
     )
@@ -160,7 +169,8 @@ const MenuTree = forwardRef<MenuTreeRef, MenuTreeProps>((props, ref) => {
       <SimpleTreeView
         className="color-[var(--text-color)]"
         aria-label="node tree navigator"
-        expandedItems={expandedNodes}>
+        expandedItems={expandedNodes}
+        selectedItems={selectedNodePath}>
         {loadTreeItem(nodes)}
       </SimpleTreeView>
       <Dialog
@@ -172,8 +182,12 @@ const MenuTree = forwardRef<MenuTreeRef, MenuTreeProps>((props, ref) => {
             event.preventDefault()
             const formData = new FormData(event.currentTarget)
             const formJson = Object.fromEntries((formData as any).entries())
-            console.log(formData, formJson)
             formJson['flags'] = Number(formJson['flags'])
+            const path = formJson["path"] as string
+            if (!path.startsWith("/")) {
+              formJson["path"] = (selectedNodePath !== "/" ? selectedNodePath : "") + "/" + path
+            }
+            console.log(formJson)
             await AddNode(new main.NodeInfo(formJson))
             closeNodeInfoDialog()
           },
@@ -185,13 +199,30 @@ const MenuTree = forwardRef<MenuTreeRef, MenuTreeProps>((props, ref) => {
             To subscribe to this website, please enter your email address here. We
             will send updates occasionally.
           </DialogContentText> */}
+          <FormControl
+            sx={{ m: 1 }}
+            className="!mr-0 !ml-0 w-100% !flex">
+            <InputLabel id="demo-multiple-checkbox-label">持久化</InputLabel>
+            <Select
+              required
+              autoFocus
+              id="flags"
+              name="flags"
+              label="持久化"
+              defaultValue=""
+            >
+              <MenuItem value={1}>临时</MenuItem>
+              <MenuItem value={2}>永久</MenuItem>
+              <MenuItem value={4}>TLL</MenuItem>
+            </Select>
+          </FormControl>
           <TextField
             autoFocus
             required
             margin="dense"
             id="path"
             name="path"
-            label="Path"
+            label="路径"
             type="text"
             fullWidth
             variant="standard"
@@ -203,22 +234,12 @@ const MenuTree = forwardRef<MenuTreeRef, MenuTreeProps>((props, ref) => {
             margin="dense"
             id="info"
             name="info"
-            label="Info"
+            label="内容"
             type="text"
             fullWidth
             variant="standard"
             defaultValue=""
           />
-          <Select
-            autoFocus
-            id="flags"
-            name="flags"
-            label="Flags"
-            className="w-100%"
-            defaultValue={1}
-          >
-            <MenuItem value={1}>临时</MenuItem>
-          </Select>
         </DialogContent>
         <DialogActions>
           <Button onClick={closeNodeInfoDialog}>CANCAL</Button>

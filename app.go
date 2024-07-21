@@ -105,6 +105,20 @@ func (a *App) Connect(k string) string {
 	return ""
 }
 
+func (a *App) CloseConnection(key string) {
+	connection := a.ConnectionManager.ConnectionMap[key]
+	if connection == nil {
+		return
+	}
+	if connection.ZkConn == nil {
+		return
+	}
+	connection.ZkConn.Close()
+	connection.ZkConn = nil
+	a.ConnectionManager.ConnectedMap[key] = false
+	runtime.EventsEmit(a.ctx, "childrenNodeChange", "/")
+}
+
 // Greet returns a greeting for the given name
 func (a *App) GetNodes(path string) []Node {
 
@@ -170,4 +184,21 @@ func (a *App) AddNode(nodeInfo NodeInfo) {
 	}
 
 	a.zkConn.Create(nodeInfo.Path, []byte(nodeInfo.Info), nodeInfo.Flags, zk.WorldACL(zk.PermAll))
+}
+
+func (a *App) DeleteNode(path string) {
+
+	if a.zkConn == nil {
+		return
+	}
+
+	err := a.zkConn.Delete(path, 0)
+	if err != nil {
+		slog.Error(err.Error())
+	}
+	pathIndex := strings.LastIndex(path, "/")
+	if pathIndex == 0 {
+		pathIndex = pathIndex + 1
+	}
+	runtime.EventsEmit(a.ctx, "childrenNodeChange", path[0:pathIndex])
 }

@@ -13,7 +13,7 @@ import {
 import { forwardRef, useEffect, useImperativeHandle, useState, MouseEventHandler } from "react"
 import { DeleteConnection, GetConnections, SaveConnection } from "../../wailsjs/go/connection/ConnectionManager"
 import { config, connection } from "../../wailsjs/go/models";
-import { Connect } from "../../wailsjs/go/main/App";
+import { CloseConnection, Connect } from "../../wailsjs/go/main/App";
 import { useNotification } from "../hooks/use-notification";
 import { ContextMenuHoc, type ContextMenuPropsItem } from "../component/context-menu";
 
@@ -99,17 +99,30 @@ const Connection = forwardRef<ConnectionRef>(({ }, ref) => {
             {
               key: "DELETE",
               node: ({ k, close }: ContextMenuPropsItem) =>
-                <MenuItem
-                  onClick={async () => {
-                    if (k) {
-                      await DeleteConnection(k)
-                      getConnections()
-                    } else {
-                      close()
-                    }
-                  }}>
-                  DELETE
-                </MenuItem>
+                <>
+                  <MenuItem
+                    onClick={async () => {
+                      if (k) {
+                        await DeleteConnection(k)
+                        getConnections()
+                      } else {
+                        close()
+                      }
+                    }}>
+                    DELETE
+                  </MenuItem>
+                  <MenuItem
+                    onClick={async () => {
+                      if (k) {
+                        await CloseConnection(k)
+                        getConnections()
+                      } else {
+                        close()
+                      }
+                    }}>
+                    CLOSE
+                  </MenuItem>
+                </>
             }
           ]}
         />

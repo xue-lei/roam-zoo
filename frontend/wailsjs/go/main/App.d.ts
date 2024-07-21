@@ -4,7 +4,11 @@ import {main} from '../models';
 
 export function AddNode(arg1:main.NodeInfo):Promise<void>;
 
+export function CloseConnection(arg1:string):Promise<void>;
+
 export function Connect(arg1:string):Promise<string>;
+
+export function DeleteNode(arg1:string):Promise<void>;
 
 export function GetNodeInfo(arg1:string):Promise<string>;
 
