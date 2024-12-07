@@ -1,7 +1,7 @@
 import { Snackbar, SnackbarOrigin } from "@mui/material"
 import { useContext, useEffect, useState } from "react"
 import { createRoot } from "react-dom/client";
-import { MessageContext, MessageContextType } from "../../component/provider";
+import { MessageContext, RootDivContextType } from "../../component/provider";
 
 interface State extends SnackbarOrigin {
   open?: boolean;
@@ -10,7 +10,7 @@ interface State extends SnackbarOrigin {
 
 const useNotification = () => {
 
-  const { value: rootDiv, setValue: setRootDiv } = useContext<MessageContextType>(MessageContext)
+  const { rootDiv, setRootDiv } = useContext<RootDivContextType>(MessageContext)
 
   const [state, setState] = useState<State>({
     open: false,

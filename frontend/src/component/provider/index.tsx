@@ -1,12 +1,14 @@
 import { createContext } from "react";
 import { Root } from "react-dom/client";
 
-interface MessageContextType {
-  value: Root | null,
-  setValue: (value: Root) => void
+interface RootDivContextType {
+  rootDiv: Root | null,
+  setRootDiv: (value: Root) => void
 }
 
 
-const MessageContext = createContext<MessageContextType>({ value: null, setValue: () => { } })
+const MessageContext = createContext<RootDivContextType>({ rootDiv: null, setRootDiv: () => { } })
 
-export { MessageContext, type MessageContextType }
+const Loading = createContext<RootDivContextType>({ rootDiv: null, setRootDiv: () => { } })
+
+export { MessageContext, Loading, type RootDivContextType }

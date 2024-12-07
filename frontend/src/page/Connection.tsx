@@ -16,6 +16,7 @@ import { config, connection } from "../../wailsjs/go/models";
 import { CloseConnection, Connect } from "../../wailsjs/go/main/App";
 import { useNotification } from "../hooks/use-notification";
 import { ContextMenuHoc, type ContextMenuPropsItem } from "../component/context-menu";
+import { useLoading } from "../hooks/loading";
 
 interface ConnectionRef {
   openConnectInfoDialog: () => void
@@ -31,7 +32,7 @@ const Connection = forwardRef<ConnectionRef>(({ }, ref) => {
 
   const [connectInfoDialog, setConnectInfoDialog] = useState(false);
 
-  const [openBackdrop, setOpenBackdrop] = useState(false);
+  const [startLoading, closeLoading] = useLoading();
 
   const openConnectInfoDialog = () => {
     setSelectedCfg(new connection.ConnectionInfo({
@@ -69,9 +70,9 @@ const Connection = forwardRef<ConnectionRef>(({ }, ref) => {
           className={`${cfg.connected ? "bg-red" : ""} color-[var(--text-color)] shadow shadow-blueGray [&:not(:first-child)]:m-t-2 p-3 b-rd-2 cursor-pointer select-none`}
           onDoubleClick={async (event: React.MouseEvent) => {
             event.stopPropagation()
-            setOpenBackdrop(true)
+            startLoading()
             const r = await Connect(cfg.key)
-            setOpenBackdrop(false)
+            closeLoading()
             if (r) {
               show({ vertical: 'top', horizontal: 'center', message: r })
               return;
@@ -178,11 +179,6 @@ const Connection = forwardRef<ConnectionRef>(({ }, ref) => {
           <Button type="submit">SAVE</Button>
         </DialogActions>
       </Dialog>
-      <Backdrop
-        sx={{ color: "var(--text-color)", zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={openBackdrop}>
-        <CircularProgress color="inherit" />
-      </Backdrop>
     </>
   )
 })

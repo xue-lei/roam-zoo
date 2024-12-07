@@ -7,6 +7,7 @@ import { SimpleTreeView, TreeItem } from '@mui/x-tree-view';
 import { Add, DeleteForever } from '@mui/icons-material';
 import { EventsOn } from '../../wailsjs/runtime/runtime';
 import { main } from '../../wailsjs/go/models';
+import { useLoading } from '../hooks/loading';
 
 interface MenuTreeProps {
   setSelectNode: (path: string) => void
@@ -17,8 +18,9 @@ interface MenuTreeRef {
 
 const MenuTree = forwardRef<MenuTreeRef, MenuTreeProps>((props, ref) => {
 
-  useImperativeHandle(ref, () => ({
-  }))
+  useImperativeHandle(ref, () => ({}))
+
+  const [startLoading, closeLoading] = useLoading();
 
   const { setSelectNode } = props;
 
@@ -103,12 +105,14 @@ const MenuTree = forwardRef<MenuTreeRef, MenuTreeProps>((props, ref) => {
 
   // 选择节点
   const selectNode = async (path: string) => {
+    startLoading()
     // 选中的路径
     setSelectedNodePath(path)
     // 加载子节点
     await loadChildren(path)
     // 选中展开
     setExpandedNodes(Array.from(new Set([...expandedNodes, path])))
+    closeLoading()
   }
 
   // 折叠
@@ -146,9 +150,7 @@ const MenuTree = forwardRef<MenuTreeRef, MenuTreeProps>((props, ref) => {
       <div className="flex flex-justify-between group">
         <Box onClick={() => selectNode(path)} className="flex-1 text-left">{name}</Box>
         <Box className="flex-content-center group-hover:flex hidden">
-          <Add onClick={(event) => {
-            openNodeInfoDialog()
-          }} />
+          <Add onClick={openNodeInfoDialog} />
           <DeleteForever onClick={(event) => {
             event.stopPropagation()
             DeleteNode(path)
